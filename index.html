@@ -80,6 +80,13 @@ button:hover{background:var(--accent2)}button.ghost{background:transparent;color
 .voicetog{padding:2px 9px;font-size:.95rem}.voicetog.on{background:color-mix(in srgb,var(--accent) 20%,transparent);border-color:transparent}
 @keyframes pulse{50%{opacity:.5}}
 .ni a{color:var(--accent2);text-decoration:none;border-bottom:1px solid color-mix(in srgb,var(--accent2) 40%,transparent)}.ni a:hover{color:var(--accent)}
+.metrics{margin:14px 0 2px}
+.mtag{font-family:var(--mono);font-size:.66rem;letter-spacing:.1em;text-transform:uppercase;color:var(--accent2);font-weight:600;margin-bottom:8px}
+.mrow{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.mtile{background:var(--card);border:1px solid var(--hair);border-radius:12px;padding:12px 14px;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+.ml{font-family:var(--mono);font-size:.62rem;text-transform:uppercase;letter-spacing:.06em;color:var(--soft)}
+.mv{font-size:1.35rem;font-weight:650;letter-spacing:-.02em;margin:2px 0;font-variant-numeric:tabular-nums}
+.ms{font-size:.78rem;color:var(--soft)}
 .hidden{display:none}
 </style>
 </head>
@@ -102,6 +109,7 @@ var send=0,dec=0,block=0;for(var i=0;i<dirs.length;i++){var ny=dirs[i].needsYou|
 var h="";
 h+="<div class=mast><div class=brand><span class=dot></span><div><h1>Command Central</h1><div class=sub>7 Directors reporting to your Chief of Staff</div></div></div><div class=upd>updated <b>"+esc(b.updated||"-")+"</b><br>"+esc(b.lastRun||"")+"</div></div>";
 h+="<div class=needbar><span class=chip><b>"+send+"</b> drafts to review</span><span class=chip><b>"+dec+"</b> decisions</span><span class=chip><b>"+block+"</b> blocked</span></div>";
+h+=metricsHtml(b.metrics);
 h+="<div class=cols><div>";
 h+="<div class=panel><div class=ph><span class=tag>Talk to COS</span><button id=aloud class=voicetog title='Read COS replies aloud'>🔊 read aloud</button></div><div class=thread id=thread></div><div class=composer><button id=mic class=micbtn title='Hold a thought? Tap and speak'>🎤</button><textarea id=cin placeholder='Message COS — or tap 🎤 and talk. Approve a draft, reprioritize, ask a question...'></textarea><button id=csend>Send</button></div><div class=hint>Approve by talking to COS here (“post the LinkedIn draft”, “send email 6 Tuesday”). Voice works in Chrome.</div></div>";
 h+="<div class=grid id=grid></div></div>";
@@ -164,6 +172,13 @@ return "<div class=gitem><div class=grow><input type=checkbox class=gchk data-id
 function horizonsHtml(){var hz=GOALS.horizons||{};var order=[["annual","2026 — Annual"],["quarterly","Q3 — Quarterly"],["monthly","This month"],["weekly","This week"],["daily","Today"]];var h="";
 for(var i=0;i<order.length;i++){var k=order[i][0];var list=hz[k];if(!list)continue;var c=count(list);h+="<div class=horizon><div class=hh><span class=hlabel>"+esc(order[i][1])+"</span><span class=hcount>"+c.done+"/"+c.total+" done</span></div>"+list.map(function(n){return itemHtml(n,true)}).join("")+"<button class=addtop data-h="+k+">+ add item</button></div>"}
 if(!h)h="<div class=horizon><span class=sub>No goals loaded.</span></div>";return h}
+function metricsHtml(m){if(!m)return "";var mc=m.mailchimp||{},bf=m.buffer||{},t=[];
+if(mc.members!=null)t.push(["Email list",esc(mc.members)+" subs",(mc.avgOpenRate!=null?mc.avgOpenRate+"% avg open":"")]);
+if(mc.lastCampaign)t.push(["Last email",esc(mc.lastCampaign.openRate)+"% open",esc(mc.lastCampaign.subject||"")]);
+if(bf.reach!=null)t.push(["Social reach 30d",esc(bf.reach),(bf.engagement!=null?esc(bf.engagement)+" engagements":"")]);else t.push(["Social","—",esc(bf.note||"")]);
+if(m.socialDrafts!=null)t.push(["In Buffer",esc(m.socialDrafts)+" drafts","waiting to schedule"]);
+if(!t.length)return "";
+return "<div class=metrics><div class=mtag>📊 Marketing · updated "+esc(m.updated||"")+"</div><div class=mrow>"+t.map(function(x){return "<div class=mtile><div class=ml>"+esc(x[0])+"</div><div class=mv>"+esc(x[1])+"</div><div class=ms>"+esc(x[2]||"")+"</div></div>"}).join("")+"</div></div>";}
 function nearHtml(){var hz=GOALS.horizons||{};return (nearBlk("This week",hz.weekly)+nearBlk("Today",hz.daily))||"<div class=near><span class=sub>—</span></div>"}
 function nearBlk(label,items){if(!items||!items.length)return "";var s="<div class=near><div class=gk>"+esc(label)+"</div><ul class=nlist>";for(var i=0;i<items.length;i++)s+="<li"+(items[i].done?" class=ndone":"")+">"+esc(items[i].title)+"</li>";return s+"</ul></div>"}
 function rerenderGoals(){var gh=document.getElementById("ghorizons");if(gh)gh.innerHTML=horizonsHtml();var nb=document.getElementById("nearbody");if(nb)nb.innerHTML=nearHtml()}
