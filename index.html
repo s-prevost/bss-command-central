@@ -87,6 +87,9 @@ button:hover{background:var(--accent2)}button.ghost{background:transparent;color
 .ml{font-family:var(--mono);font-size:.62rem;text-transform:uppercase;letter-spacing:.06em;color:var(--soft)}
 .mv{font-size:1.35rem;font-weight:650;letter-spacing:-.02em;margin:2px 0;font-variant-numeric:tabular-nums}
 .ms{font-size:.78rem;color:var(--soft)}
+.invsend{margin-top:12px;border-top:1px solid var(--hair2);padding-top:9px}
+.invrow{display:flex;justify-content:space-between;gap:10px;align-items:center;font-size:.87rem;padding:5px 0}
+.invrow a{color:var(--needs);text-decoration:none;white-space:nowrap;border-bottom:1px solid color-mix(in srgb,var(--needs) 40%,transparent)}.invrow a:hover{color:var(--accent)}
 .hidden{display:none}
 </style>
 </head>
@@ -110,6 +113,7 @@ var h="";
 h+="<div class=mast><div class=brand><span class=dot></span><div><h1>Command Central</h1><div class=sub>7 Directors reporting to your Chief of Staff</div></div></div><div class=upd>updated <b>"+esc(b.updated||"-")+"</b><br>"+esc(b.lastRun||"")+"</div></div>";
 h+="<div class=needbar><span class=chip><b>"+send+"</b> drafts to review</span><span class=chip><b>"+dec+"</b> decisions</span><span class=chip><b>"+block+"</b> blocked</span></div>";
 h+=metricsHtml(b.metrics);
+h+=financeHtml(b.finance);
 h+="<div class=cols><div>";
 h+="<div class=panel><div class=ph><span class=tag>Talk to COS</span><button id=aloud class=voicetog title='Read COS replies aloud'>🔊 read aloud</button></div><div class=thread id=thread></div><div class=composer><button id=mic class=micbtn title='Hold a thought? Tap and speak'>🎤</button><textarea id=cin placeholder='Message COS — or tap 🎤 and talk. Approve a draft, reprioritize, ask a question...'></textarea><button id=csend>Send</button></div><div class=hint>Approve by talking to COS here (“post the LinkedIn draft”, “send email 6 Tuesday”). Voice works in Chrome.</div></div>";
 h+="<div class=grid id=grid></div></div>";
@@ -179,6 +183,14 @@ if(bf.reach!=null)t.push(["Social reach 30d",esc(bf.reach),(bf.engagement!=null?
 if(m.socialDrafts!=null)t.push(["In Buffer",esc(m.socialDrafts)+" drafts","waiting to schedule"]);
 if(!t.length)return "";
 return "<div class=metrics><div class=mtag>📊 Marketing · updated "+esc(m.updated||"")+"</div><div class=mrow>"+t.map(function(x){return "<div class=mtile><div class=ml>"+esc(x[0])+"</div><div class=mv>"+esc(x[1])+"</div><div class=ms>"+esc(x[2]||"")+"</div></div>"}).join("")+"</div></div>";}
+function financeHtml(f){if(!f)return "";var p=f.pnl||{},bs=f.balanceSheet||{},inv=f.invoicesToSend||[],t=[];
+if(p.netProfit!=null)t.push([(p.period||"Net profit"),"$"+esc(p.netProfit),(p.margin!=null?esc(p.margin)+"% margin":"")]);
+if(bs.cash!=null)t.push(["Cash","$"+esc(bs.cash),(bs.asOf?"as of "+esc(bs.asOf):"")]);
+if(f.arOverdue!=null)t.push(["AR overdue","$"+esc(f.arOverdue),"past due"]);
+var h="<div class=metrics><div class=mtag>💵 Finance · updated "+esc(f.updated||"")+"</div>";
+if(t.length)h+="<div class=mrow>"+t.map(function(x){return "<div class=mtile><div class=ml>"+esc(x[0])+"</div><div class=mv>"+esc(x[1])+"</div><div class=ms>"+esc(x[2]||"")+"</div></div>"}).join("")+"</div>";
+if(inv.length)h+="<div class=invsend><div class=ml style='margin-bottom:4px'>Invoices to send ("+inv.length+")</div>"+inv.map(function(v){return "<div class=invrow><span>"+esc(v.client)+" — $"+esc(v.amount)+"</span>"+(v.url?"<a href='"+esc(v.url)+"' target=_blank rel=noopener>review + send ↗</a>":"")+"</div>"}).join("")+"</div>";
+return h+"</div>";}
 function nearHtml(){var hz=GOALS.horizons||{};return (nearBlk("This week",hz.weekly)+nearBlk("Today",hz.daily))||"<div class=near><span class=sub>—</span></div>"}
 function nearBlk(label,items){if(!items||!items.length)return "";var s="<div class=near><div class=gk>"+esc(label)+"</div><ul class=nlist>";for(var i=0;i<items.length;i++)s+="<li"+(items[i].done?" class=ndone":"")+">"+esc(items[i].title)+"</li>";return s+"</ul></div>"}
 function rerenderGoals(){var gh=document.getElementById("ghorizons");if(gh)gh.innerHTML=horizonsHtml();var nb=document.getElementById("nearbody");if(nb)nb.innerHTML=nearHtml()}
