@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Command Central</title>
+<style>
+:root{--paper:#f4f1ea;--card:#fbfaf6;--ink:#26221c;--soft:#6b6459;--hair:#e3ddd0;--hair2:#ece7db;--accent:#5b7355;--accent2:#3f5340;--idle:#8a8172;--work:#c0892d;--block:#b0503c;--needs:#a8642a;--mono:ui-monospace,Menlo,Consolas,monospace;--sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+@media(prefers-color-scheme:dark){:root{--paper:#1a1714;--card:#221e1a;--ink:#efe9dd;--soft:#a89f8f;--hair:#332d26;--hair2:#2a251f;--accent:#8faa86;--accent2:#a7c09e;--work:#d6a545;--block:#d06a54;--needs:#d98a4e}}
+*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);line-height:1.5;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1180px;margin:0 auto;padding:22px 18px 70px}
+.mast{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:4px}
+.brand{display:flex;align-items:center;gap:11px}.dot{width:11px;height:11px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 4px color-mix(in srgb,var(--accent) 18%,transparent)}
+h1{font-size:1.5rem;margin:0;letter-spacing:-.02em;font-weight:650}.sub{color:var(--soft);font-size:.88rem}
+.upd{font-family:var(--mono);font-size:.75rem;color:var(--soft)}.upd b{color:var(--ink)}
+.cols{display:grid;grid-template-columns:1fr 340px;gap:18px;margin-top:18px}@media(max-width:900px){.cols{grid-template-columns:1fr}}
+.panel{background:var(--card);border:1px solid var(--hair);border-radius:14px;box-shadow:0 1px 2px rgba(0,0,0,.04),0 6px 20px rgba(38,34,28,.05);overflow:hidden}
+.ph{padding:13px 16px;border-bottom:1px solid var(--hair2);display:flex;align-items:center;justify-content:space-between;gap:8px}
+.tag{font-family:var(--mono);font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--accent2);font-weight:600}
+.needbar{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0 2px}
+.chip{font-family:var(--mono);font-size:.74rem;padding:6px 11px;border-radius:20px;background:var(--card);border:1px solid var(--hair)}
+.chip b{color:var(--needs)}
+.thread{padding:14px 16px;max-height:420px;overflow-y:auto;display:flex;flex-direction:column;gap:10px}
+.msg{max-width:86%;padding:9px 13px;border-radius:13px;font-size:.9rem;white-space:pre-wrap;word-wrap:break-word}
+.msg.cos{align-self:flex-start;background:color-mix(in srgb,var(--accent) 14%,transparent);border:1px solid color-mix(in srgb,var(--accent) 22%,transparent);border-bottom-left-radius:4px}
+.msg.shelley{align-self:flex-end;background:var(--hair2);border-bottom-right-radius:4px}
+.msg .who{font-family:var(--mono);font-size:.6rem;text-transform:uppercase;letter-spacing:.08em;color:var(--soft);margin-bottom:3px}
+.composer{display:flex;gap:8px;padding:12px 16px;border-top:1px solid var(--hair2)}
+textarea{font-family:var(--sans);font-size:.9rem;width:100%;resize:vertical;border:1px solid var(--hair);border-radius:9px;padding:9px 11px;background:var(--paper);color:var(--ink);min-height:42px}
+textarea:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:transparent}
+button{font-family:var(--sans);font-weight:600;font-size:.86rem;padding:9px 15px;border-radius:9px;border:0;background:var(--accent);color:#fff;cursor:pointer;white-space:nowrap}
+button:hover{background:var(--accent2)}button.ghost{background:transparent;color:var(--accent2);border:1px solid var(--hair)}
+.hint{padding:0 16px 12px;font-size:.76rem;color:var(--soft)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;margin-top:16px}
+.dir{background:var(--card);border:1px solid var(--hair);border-radius:13px;overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+.stripe{height:3px;background:var(--idle)}.dir[data-s=working] .stripe{background:var(--work)}.dir[data-s=blocked] .stripe{background:var(--block)}.dir[data-s=idle] .stripe{background:var(--accent);opacity:.5}
+.dh{padding:13px 15px 4px;display:flex;align-items:center;justify-content:space-between}.dname{font-weight:640}
+.pill{font-family:var(--mono);font-size:.64rem;text-transform:uppercase;letter-spacing:.06em;font-weight:600;padding:3px 9px;border-radius:20px}
+.pill.idle{color:var(--idle);background:color-mix(in srgb,var(--idle) 14%,transparent)}.pill.working{color:var(--work);background:color-mix(in srgb,var(--work) 15%,transparent)}.pill.blocked{color:var(--block);background:color-mix(in srgb,var(--block) 15%,transparent)}
+.db{padding:2px 15px 14px;display:flex;flex-direction:column;gap:9px}.hl{font-size:.9rem}
+.ni{font-size:.82rem;display:flex;gap:8px;padding:5px 0;border-top:1px solid var(--hair2)}
+.ni:first-child{border-top:0}.k{font-family:var(--mono);font-size:.58rem;text-transform:uppercase;padding:2px 6px;border-radius:5px;font-weight:600;height:fit-content}
+.k.send{background:color-mix(in srgb,var(--needs) 15%,transparent);color:var(--needs)}.k.decision{background:color-mix(in srgb,var(--work) 16%,transparent);color:var(--work)}
+.notewrap{padding:10px 15px 14px;border-top:1px solid var(--hair2);background:color-mix(in srgb,var(--paper) 45%,transparent)}
+.notewrap label{font-family:var(--mono);font-size:.62rem;text-transform:uppercase;letter-spacing:.08em;color:var(--soft)}
+.noterow{display:flex;gap:7px;margin-top:6px;align-items:flex-start}
+.near{padding:11px 16px;border-top:1px solid var(--hair2)}.near:first-child{border-top:0}
+.gk{font-family:var(--mono);font-size:.62rem;text-transform:uppercase;letter-spacing:.1em;color:var(--accent2);font-weight:600}
+.nlist{list-style:none;margin:6px 0 0;padding:0}.nlist li{font-size:.85rem;padding:4px 0 4px 14px;position:relative}
+.nlist li:before{content:"";position:absolute;left:0;top:11px;width:5px;height:5px;border-radius:50%;background:var(--accent)}
+.goalsec{margin-top:26px}.gmast{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:12px}
+.horizon{background:var(--card);border:1px solid var(--hair);border-radius:13px;padding:14px 18px;margin-bottom:12px;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+.hh{display:flex;align-items:center;gap:10px;margin-bottom:8px}.hlabel{font-family:var(--mono);font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;color:var(--accent2);font-weight:600}
+.hcount{margin-left:auto;font-family:var(--mono);font-size:.66rem;color:var(--soft)}
+ul.tree{list-style:none;margin:0;padding:0}ul.tree ul{list-style:none;margin:2px 0 5px;padding-left:15px;border-left:1px solid var(--hair2)}
+ul.tree li{padding:3px 0;font-size:.88rem;color:var(--soft)}ul.gt-top>li{color:var(--ink);font-weight:600;padding:6px 0}ul.gt-top ul li{font-weight:400}
+.due{font-family:var(--mono);font-size:.6rem;color:var(--needs);border:1px solid color-mix(in srgb,var(--needs) 30%,transparent);border-radius:5px;padding:1px 5px;margin-left:6px;white-space:nowrap}
+#login{max-width:380px;margin:14vh auto;text-align:center}#login .panel{padding:26px}#login h1{margin-bottom:6px}#login p{color:var(--soft);font-size:.9rem;margin:0 0 18px}
+#login .row{display:flex;gap:8px;margin-top:12px}#lerr{color:var(--block);font-size:.82rem;min-height:18px;margin-top:8px}
+.hidden{display:none}
+</style>
+</head>
+<body>
+<div id="login"><div class="panel"><div class="brand" style="justify-content:center"><span class="dot"></span><h1>Command Central</h1></div><p>Big Self School — Chief of Staff</p><input id="lpass" type="password" placeholder="passphrase" style="width:100%;padding:11px;border-radius:9px;border:1px solid var(--hair);background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:.95rem" /><div class="row"><button id="lbtn" style="flex:1">Enter</button></div><div id="lerr"></div></div></div>
+<div id="app" class="wrap hidden"></div>
+<script>
+var API = "https://frqqdorkjkamiwlyhmga.supabase.co/functions/v1/cos";
+var pass = localStorage.getItem("cos_pass") || "";
+function esc(s){s=(s==null)?"":String(s);return s.replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c]})}
+function api(action,extra){var body={action:action,pass:pass};if(extra)for(var k in extra)body[k]=extra[k];return fetch(API,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)}).then(function(r){if(r.status===401){var e=new Error("unauthorized");e.code=401;throw e}return r.json()})}
+var L=document.getElementById("login"),A=document.getElementById("app");
+function showLogin(){L.classList.remove("hidden");A.classList.add("hidden")}
+document.getElementById("lbtn").onclick=function(){var p=document.getElementById("lpass").value;pass=p;api("state").then(function(d){localStorage.setItem("cos_pass",p);L.classList.add("hidden");A.classList.remove("hidden");render(d);startPoll()}).catch(function(){pass="";document.getElementById("lerr").textContent="That passphrase did not match. Try again."})};
+document.getElementById("lpass").addEventListener("keydown",function(e){if(e.key==="Enter")document.getElementById("lbtn").click()});
+var lastData=null;
+function render(d){lastData=d;var b=d.board||{};var dirs=b.directors||[];var g=b.goals||{};var hz=g.horizons||{};
+var send=0,dec=0,block=0;for(var i=0;i<dirs.length;i++){var ny=dirs[i].needsYou||[];for(var j=0;j<ny.length;j++){if(ny[j].type==="send")send++;else dec++}if(dirs[i].status==="blocked")block++}
+var h="";
+h+="<div class=mast><div class=brand><span class=dot></span><div><h1>Command Central</h1><div class=sub>7 Directors reporting to your Chief of Staff</div></div></div><div class=upd>updated <b>"+esc(b.updated||"-")+"</b><br>"+esc(b.lastRun||"")+"</div></div>";
+h+="<div class=needbar><span class=chip><b>"+send+"</b> drafts to review</span><span class=chip><b>"+dec+"</b> decisions</span><span class=chip><b>"+block+"</b> blocked</span></div>";
+h+="<div class=cols><div>";
+h+="<div class=panel><div class=ph><span class=tag>Talk to COS</span><span class=sub>reads new messages on the 6:15am run</span></div><div class=thread id=thread></div><div class=composer><textarea id=cin placeholder='Message COS — approve a draft, reprioritize, ask a question...'></textarea><button id=csend>Send</button></div><div class=hint>COS replies on its next run (6:15am), or right away when you ask Claude to run it.</div></div>";
+h+="<div class=grid id=grid></div></div>";
+h+="<div><div class=panel><div class=ph><span class=tag>Focus</span></div>"+nearHtml(hz)+"</div></div>";
+h+="</div>";
+h+="<div class=goalsec><div class=gmast><span class=tag>Goals cascade</span><span class=upd>from your coach focus board · "+esc(g.exported_at||"")+"</span></div>"+cascadeHtml(hz)+"</div>";
+A.innerHTML=h;
+document.getElementById("grid").innerHTML=dirs.map(function(x){return cardHtml(x,(d.notes||{})[x.short]||"")}).join("");
+renderThread(d.messages||[]);
+document.getElementById("csend").onclick=sendMsg;
+document.getElementById("cin").addEventListener("keydown",function(e){if(e.key==="Enter"&&(e.metaKey||e.ctrlKey))sendMsg()});
+bindNotes();}
+function nearHtml(hz){var h=nearBlk("This week",hz.weekly)+nearBlk("Today",hz.daily);if(!h)h="<div class=near><span class=sub>No near-term items yet.</span></div>";return h}
+function nearBlk(label,items){if(!items||!items.length)return "";var s="<div class=near><div class=gk>"+esc(label)+"</div><ul class=nlist>";for(var i=0;i<items.length;i++)s+="<li>"+esc(items[i].title)+"</li>";return s+"</ul></div>"}
+function cascadeHtml(hz){var order=[["annual","2026 — Annual"],["quarterly","Q3 — Quarterly"],["monthly","This month"],["weekly","This week"],["daily","Today"]];var h="";for(var i=0;i<order.length;i++){var items=hz[order[i][0]];if(items&&items.length)h+=horizonCard(order[i][1],items)}if(!h)h="<div class=horizon><span class=sub>No goals loaded yet.</span></div>";return h}
+function horizonCard(label,items){return "<div class=horizon><div class=hh><span class=hlabel>"+esc(label)+"</span><span class=hcount>"+items.length+"</span></div>"+treeHtml(items,true)+"</div>"}
+function treeHtml(items,top){var s="<ul class='tree"+(top?" gt-top":"")+"'>";for(var i=0;i<items.length;i++){var it=items[i];var due=it.due?" <span class=due>"+esc(it.due)+"</span>":"";var kids=(it.children&&it.children.length)?treeHtml(it.children,false):"";s+="<li>"+esc(it.title)+due+kids+"</li>"}return s+"</ul>"}
+function cardHtml(x,note){var ny=(x.needsYou||[]).map(function(n){return "<div class=ni><span class='k "+esc(n.type)+"'>"+(n.type==="send"?"review":"decide")+"</span><span>"+esc(n.what)+"</span></div>"}).join("");
+return "<div class=dir data-s="+esc(x.status)+"><div class=stripe></div><div class=dh><span class=dname>"+esc(x.name)+"</span><span class='pill "+esc(x.status)+"'>"+esc(x.status)+"</span></div><div class=db><div class=hl>"+esc(x.headline||"")+"</div>"+ny+"</div><div class=notewrap><label>Your notes for "+esc(x.name)+"</label><div class=noterow><textarea data-note="+esc(x.short)+" placeholder='jot a note or instruction...'>"+esc(note)+"</textarea><button class=ghost data-save="+esc(x.short)+">Save</button></div></div></div>"}
+function renderThread(msgs){var t=document.getElementById("thread");if(!t)return;t.innerHTML=msgs.map(function(m){var who=m.role==="cos"?"COS":"You";return "<div class='msg "+esc(m.role)+"'><div class=who>"+who+"</div>"+esc(m.body)+"</div>"}).join("");t.scrollTop=t.scrollHeight}
+function bindNotes(){var btns=document.querySelectorAll("[data-save]");for(var i=0;i<btns.length;i++){btns[i].onclick=function(){var dir=this.getAttribute("data-save");var ta=document.querySelector("[data-note="+dir+"]");var self=this;self.textContent="Saving...";api("note",{director:dir,body:ta.value}).then(function(){self.textContent="Saved";setTimeout(function(){self.textContent="Save"},1400)})}}}
+function sendMsg(){var inp=document.getElementById("cin");var v=inp.value.trim();if(!v)return;inp.value="";var t=document.getElementById("thread");t.innerHTML+="<div class='msg shelley'><div class=who>You</div>"+esc(v)+"</div>";t.scrollTop=t.scrollHeight;api("message",{thread:"cos",body:v}).then(function(){})}
+function startPoll(){setInterval(function(){api("state").then(function(d){if(document.activeElement&&document.activeElement.id==="cin")return;lastData=d;renderThread(d.messages||[])}).catch(function(){})},8000)}
+if(pass){api("state").then(function(d){L.classList.add("hidden");A.classList.remove("hidden");render(d);startPoll()}).catch(function(){showLogin()})}else{showLogin()}
+</script>
+</body>
+</html>
