@@ -74,6 +74,12 @@ button:hover{background:var(--accent2)}button.ghost{background:transparent;color
 .savetag{font-family:var(--mono);font-size:.64rem;color:var(--accent);opacity:0;transition:opacity .2s}.savetag.on{opacity:1}
 #login{max-width:380px;margin:14vh auto;text-align:center}#login .panel{padding:26px}#login h1{margin-bottom:6px}#login p{color:var(--soft);font-size:.9rem;margin:0 0 18px}
 #login .row{display:flex;gap:8px;margin-top:12px}#lerr{color:var(--block);font-size:.82rem;min-height:18px;margin-top:8px}
+.micbtn,.voicetog{background:transparent;border:1px solid var(--hair);color:var(--accent2);padding:0 13px;font-size:1.05rem;border-radius:9px;cursor:pointer;line-height:1}
+.micbtn{flex:none}.micbtn:hover,.voicetog:hover{background:var(--hair2)}
+.micbtn.listening{background:var(--block);color:#fff;border-color:transparent;animation:pulse 1s infinite}
+.voicetog{padding:2px 9px;font-size:.95rem}.voicetog.on{background:color-mix(in srgb,var(--accent) 20%,transparent);border-color:transparent}
+@keyframes pulse{50%{opacity:.5}}
+.ni a{color:var(--accent2);text-decoration:none;border-bottom:1px solid color-mix(in srgb,var(--accent2) 40%,transparent)}.ni a:hover{color:var(--accent)}
 .hidden{display:none}
 </style>
 </head>
@@ -97,7 +103,7 @@ var h="";
 h+="<div class=mast><div class=brand><span class=dot></span><div><h1>Command Central</h1><div class=sub>7 Directors reporting to your Chief of Staff</div></div></div><div class=upd>updated <b>"+esc(b.updated||"-")+"</b><br>"+esc(b.lastRun||"")+"</div></div>";
 h+="<div class=needbar><span class=chip><b>"+send+"</b> drafts to review</span><span class=chip><b>"+dec+"</b> decisions</span><span class=chip><b>"+block+"</b> blocked</span></div>";
 h+="<div class=cols><div>";
-h+="<div class=panel><div class=ph><span class=tag>Talk to COS</span><span class=sub>reads new messages on the 6:15am run</span></div><div class=thread id=thread></div><div class=composer><textarea id=cin placeholder='Message COS — approve a draft, reprioritize, ask a question...'></textarea><button id=csend>Send</button></div><div class=hint>COS replies on its next run (6:15am), or right away when you ask Claude to run it.</div></div>";
+h+="<div class=panel><div class=ph><span class=tag>Talk to COS</span><button id=aloud class=voicetog title='Read COS replies aloud'>🔊 read aloud</button></div><div class=thread id=thread></div><div class=composer><button id=mic class=micbtn title='Hold a thought? Tap and speak'>🎤</button><textarea id=cin placeholder='Message COS — or tap 🎤 and talk. Approve a draft, reprioritize, ask a question...'></textarea><button id=csend>Send</button></div><div class=hint>Approve by talking to COS here (“post the LinkedIn draft”, “send email 6 Tuesday”). Voice works in Chrome.</div></div>";
 h+="<div class=grid id=grid></div></div>";
 h+="<div><div class=panel><div class=ph><span class=tag>Focus</span></div><div id=nearbody></div></div></div>";
 h+="</div>";
@@ -108,18 +114,45 @@ renderThread(d.messages||[]);
 document.getElementById("csend").onclick=sendMsg;
 document.getElementById("cin").addEventListener("keydown",function(e){if(e.key==="Enter"&&(e.metaKey||e.ctrlKey))sendMsg()});
 bindNotes();
+setupVoice();
+window._msgBase=(d.messages||[]).length;
 rerenderGoals();
 attachGoalHandlers();}
 
 /* ---- fleet cards ---- */
-function cardHtml(x,note){var ny=(x.needsYou||[]).map(function(n){return "<div class=ni><span class='k "+esc(n.type)+"'>"+(n.type==="send"?"review":"decide")+"</span><span>"+esc(n.what)+"</span></div>"}).join("");
+function cardHtml(x,note){var ny=(x.needsYou||[]).map(function(n){var what=n.link?("<a href='"+esc(n.link)+"' target=_blank rel=noopener>"+esc(n.what)+" ↗</a>"):esc(n.what);return "<div class=ni><span class='k "+esc(n.type)+"'>"+(n.type==="send"?"review":"decide")+"</span><span>"+what+"</span></div>"}).join("");
 return "<div class=dir data-s="+esc(x.status)+"><div class=stripe></div><div class=dh><span class=dname>"+esc(x.name)+"</span><span class='pill "+esc(x.status)+"'>"+esc(x.status)+"</span></div><div class=db><div class=hl>"+esc(x.headline||"")+"</div>"+ny+"</div><div class=notewrap><label>Your notes for "+esc(x.name)+"</label><div class=noterow><textarea data-note="+esc(x.short)+" placeholder='jot a note or instruction...'>"+esc(note)+"</textarea><button class=ghost data-save="+esc(x.short)+">Save</button></div></div></div>"}
 function bindNotes(){var btns=document.querySelectorAll("[data-save]");for(var i=0;i<btns.length;i++){btns[i].onclick=function(){var dir=this.getAttribute("data-save");var ta=document.querySelector("[data-note="+dir+"]");var self=this;self.textContent="Saving...";api("note",{director:dir,body:ta.value}).then(function(){self.textContent="Saved";setTimeout(function(){self.textContent="Save"},1400)})}}}
 
 /* ---- thread ---- */
 function renderThread(msgs){var t=document.getElementById("thread");if(!t)return;t.innerHTML=msgs.map(function(m){var who=m.role==="cos"?"COS":"You";return "<div class='msg "+esc(m.role)+"'><div class=who>"+who+"</div>"+esc(m.body)+"</div>"}).join("");t.scrollTop=t.scrollHeight}
 function sendMsg(){var inp=document.getElementById("cin");var v=inp.value.trim();if(!v)return;inp.value="";var t=document.getElementById("thread");t.innerHTML+="<div class='msg shelley'><div class=who>You</div>"+esc(v)+"</div>";t.scrollTop=t.scrollHeight;api("message",{thread:"cos",body:v}).then(function(){})}
-function startPoll(){setInterval(function(){api("state").then(function(d){if(document.activeElement&&document.activeElement.id==="cin")return;renderThread(d.messages||[])}).catch(function(){})},8000)}
+function startPoll(){setInterval(function(){api("state").then(function(d){var m=d.messages||[];if(!(document.activeElement&&document.activeElement.id==="cin"))renderThread(m);if(readAloudOn()&&m.length>(window._msgBase||0)){var last=m[m.length-1];if(last&&last.role==="cos")speak(last.body)}window._msgBase=m.length}).catch(function(){})},8000)}
+/* ---- voice: speak to COS (speech-to-text) + hear COS (text-to-speech) ---- */
+var _rec=null,_listening=false;
+function setupVoice(){
+  var mic=document.getElementById("mic"),aloud=document.getElementById("aloud");
+  var Rec=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(mic){
+    if(!Rec){mic.style.display="none";}
+    else{
+      if(!_rec){_rec=new Rec();_rec.lang="en-US";_rec.interimResults=false;_rec.maxAlternatives=1;
+        _rec.onresult=function(e){var t=e.results[0][0].transcript;var c=document.getElementById("cin");if(c)c.value=(c.value?c.value+" ":"")+t;};
+        _rec.onend=function(){_listening=false;var b=document.getElementById("mic");if(b)b.classList.remove("listening");};
+        _rec.onerror=function(){_listening=false;var b=document.getElementById("mic");if(b)b.classList.remove("listening");};
+      }
+      mic.onclick=function(){if(_listening){try{_rec.stop()}catch(e){}return;}try{_rec.start();_listening=true;mic.classList.add("listening");}catch(e){}};
+    }
+  }
+  if(aloud){
+    if(!("speechSynthesis" in window)){aloud.style.display="none";}
+    else{if(localStorage.getItem("cos_aloud")==="1")aloud.classList.add("on");
+      aloud.onclick=function(){aloud.classList.toggle("on");var on=aloud.classList.contains("on");localStorage.setItem("cos_aloud",on?"1":"0");if(!on&&window.speechSynthesis)window.speechSynthesis.cancel();};
+    }
+  }
+}
+function readAloudOn(){var a=document.getElementById("aloud");return a&&a.classList.contains("on")}
+function speak(text){if(!("speechSynthesis" in window)||!text)return;var u=new SpeechSynthesisUtterance(String(text));u.rate=1.03;u.pitch=1;window.speechSynthesis.cancel();window.speechSynthesis.speak(u);}
 
 /* ---- goals outliner ---- */
 function newNode(){return {id:"g"+Date.now().toString(36)+Math.floor(Math.random()*1000),title:"New item",due:null,done:false,children:[]}}
