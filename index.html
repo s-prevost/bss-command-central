@@ -25,6 +25,13 @@ h1{font-size:1.5rem;margin:0;letter-spacing:-.02em;font-weight:650}.sub{color:va
 .msg.cos{align-self:flex-start;background:color-mix(in srgb,var(--accent) 14%,transparent);border:1px solid color-mix(in srgb,var(--accent) 22%,transparent);border-bottom-left-radius:4px}
 .msg.shelley{align-self:flex-end;background:var(--hair2);border-bottom-right-radius:4px}
 .msg .who{font-family:var(--mono);font-size:.6rem;text-transform:uppercase;letter-spacing:.08em;color:var(--soft);margin-bottom:3px}
+.msg.cos.unread{box-shadow:0 0 0 2px var(--accent2);animation:pop .3s ease}
+@keyframes pop{from{transform:scale(.98)}to{transform:scale(1)}}
+.newpill{display:inline-block;background:var(--accent2);color:#fff;font-size:.54rem;font-weight:700;letter-spacing:.06em;padding:1px 5px;border-radius:6px;margin-left:6px;vertical-align:middle}
+.handled{margin-top:5px;font-family:var(--mono);font-size:.62rem;color:#2f855a;letter-spacing:.02em}
+:root[data-theme=dark] .handled,@media (prefers-color-scheme:dark){.handled{color:#68d391}}
+.cossum{font-family:var(--mono);font-size:.62rem;color:var(--soft);letter-spacing:.02em;margin-left:auto;padding-right:10px}
+.cossum .hot{color:var(--accent2);font-weight:700}
 .composer{display:flex;gap:8px;padding:12px 16px;border-top:1px solid var(--hair2)}
 textarea{font-family:var(--sans);font-size:.9rem;width:100%;resize:vertical;border:1px solid var(--hair);border-radius:9px;padding:9px 11px;background:var(--paper);color:var(--ink);min-height:42px}
 textarea:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:transparent}
@@ -115,7 +122,7 @@ h+="<div class=needbar><span class=chip><b>"+send+"</b> drafts to review</span><
 h+=metricsHtml(b.metrics);
 h+=financeHtml(b.finance);
 h+="<div class=cols><div>";
-h+="<div class=panel><div class=ph><span class=tag>Talk to COS</span><button id=aloud class=voicetog title='Read COS replies aloud'>🔊 read aloud</button></div><div class=thread id=thread></div><div class=composer><button id=mic class=micbtn title='Hold a thought? Tap and speak'>🎤</button><textarea id=cin placeholder='Message COS — or tap 🎤 and talk. Approve a draft, reprioritize, ask a question...'></textarea><button id=csend>Send</button></div><div class=hint>Approve by talking to COS here (“post the LinkedIn draft”, “send email 6 Tuesday”). Voice works in Chrome.</div></div>";
+h+="<div class=panel><div class=ph><span class=tag>Talk to COS</span><span class=cossum id=cossum></span><button id=aloud class=voicetog title='Read COS replies aloud'>🔊 read aloud</button></div><div class=thread id=thread></div><div class=composer><button id=mic class=micbtn title='Hold a thought? Tap and speak'>🎤</button><textarea id=cin placeholder='Message COS — or tap 🎤 and talk. Approve a draft, reprioritize, ask a question...'></textarea><button id=csend>Send</button></div><div class=hint>Approve by talking to COS here (“post the LinkedIn draft”, “send email 6 Tuesday”). Voice works in Chrome.</div></div>";
 h+="<div class=grid id=grid></div></div>";
 h+="<div><div class=panel><div class=ph><span class=tag>Focus</span></div><div id=nearbody></div></div></div>";
 h+="</div>";
@@ -137,7 +144,17 @@ return "<div class=dir data-s="+esc(x.status)+"><div class=stripe></div><div cla
 function bindNotes(){var btns=document.querySelectorAll("[data-save]");for(var i=0;i<btns.length;i++){btns[i].onclick=function(){var dir=this.getAttribute("data-save");var ta=document.querySelector("[data-note="+dir+"]");var self=this;self.textContent="Saving…";api("note",{director:dir,body:ta.value}).then(function(){self.textContent="Saved ✓";setTimeout(function(){self.textContent="Save"},1600)}).catch(function(e){if(e&&e.code===401){self.textContent="Log in first";showLogin();}else{self.textContent="Failed — retry";setTimeout(function(){self.textContent="Save"},2000)}})}}}
 
 /* ---- thread ---- */
-function renderThread(msgs){var t=document.getElementById("thread");if(!t)return;t.innerHTML=msgs.map(function(m){var who=m.role==="cos"?"COS":"You";return "<div class='msg "+esc(m.role)+"'><div class=who>"+who+"</div>"+esc(m.body)+"</div>"}).join("");t.scrollTop=t.scrollHeight}
+function fmtTime(ts){try{return new Date(ts).toLocaleString([],{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"})}catch(e){return ""}}
+function renderThread(msgs){var t=document.getElementById("thread");if(!t)return;t.innerHTML=msgs.map(function(m){
+  var who=m.role==="cos"?"COS":"You";
+  var unread=(m.role==="cos"&&!m.read_by_shelley);
+  var pill=unread?" <span class=newpill>NEW</span>":"";
+  var handled=(m.role==="shelley"&&m.handled_at)?("<div class=handled>✓ handled"+(m.handled_note?" — "+esc(m.handled_note):"")+" · "+esc(fmtTime(m.handled_at))+"</div>"):"";
+  return "<div class='msg "+esc(m.role)+(unread?" unread":"")+"'><div class=who>"+who+pill+"</div>"+esc(m.body)+handled+"</div>";
+}).join("");t.scrollTop=t.scrollHeight;updateCosSummary(msgs);maybeMarkSeen(msgs)}
+function updateCosSummary(msgs){var el=document.getElementById("cossum");if(!el)return;var newc=0,handled=0,reqs=0;msgs.forEach(function(m){if(m.role==="cos"&&!m.read_by_shelley)newc++;if(m.role==="shelley"){reqs++;if(m.handled_at)handled++}});var parts=[];parts.push(newc?("<span class=hot>"+newc+" new</span> from COS"):"COS up to date");if(reqs)parts.push(handled+"/"+reqs+" requests handled");el.innerHTML=parts.join(" · ")}
+var _seenTimer=null,_seenInFlight=false;
+function maybeMarkSeen(msgs){var anyUnread=msgs.some(function(m){return m.role==="cos"&&!m.read_by_shelley});if(!anyUnread||_seenInFlight||_seenTimer)return;if(document.visibilityState&&document.visibilityState!=="visible")return;_seenTimer=setTimeout(function(){_seenTimer=null;_seenInFlight=true;api("mark_seen").then(function(){_seenInFlight=false;api("state").then(function(d){renderThread(d.messages||[])}).catch(function(){})}).catch(function(){_seenInFlight=false})},2500)}
 function sendMsg(){var inp=document.getElementById("cin");var v=inp.value.trim();if(!v)return;inp.value="";var t=document.getElementById("thread");t.innerHTML+="<div class='msg shelley'><div class=who>You</div>"+esc(v)+"</div>";t.scrollTop=t.scrollHeight;api("message",{thread:"cos",body:v}).then(function(){})}
 function startPoll(){setInterval(function(){api("state").then(function(d){var m=d.messages||[];if(!(document.activeElement&&document.activeElement.id==="cin"))renderThread(m);if(readAloudOn()&&m.length>(window._msgBase||0)){var last=m[m.length-1];if(last&&last.role==="cos")speak(last.body)}window._msgBase=m.length}).catch(function(){})},8000)}
 /* ---- voice: speak to COS (speech-to-text) + hear COS (text-to-speech) ---- */
