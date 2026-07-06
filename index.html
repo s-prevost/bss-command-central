@@ -141,8 +141,9 @@ attachGoalHandlers();}
 
 /* ---- fleet cards ---- */
 function linkHtml(link,label){if(!link)return esc(label);var l=String(link).trim().replace(/^open\s+/i,"");
-  var m=l.match(/^(?:~\/(?:code\/)?claude-workspace\/|\.\/)?((?:agents|goals|docs)\/[^\s]+)$/i);
-  if(m)l="https://github.com/Big-Self-School/claude-workspace/blob/main/"+m[1];
+  var i=l.indexOf("claude-workspace/");
+  if(i>=0)l="https://github.com/Big-Self-School/claude-workspace/blob/main/"+l.slice(i+17);
+  else if(/^(agents|goals|docs)\//i.test(l))l="https://github.com/Big-Self-School/claude-workspace/blob/main/"+l;
   if(/^https?:\/\//i.test(l))return "<a href='"+esc(l)+"' target=_blank rel=noopener>"+esc(label)+" ↗</a>";
   return "<span class=pathchip data-copy='"+esc(link)+"' title='Local file — click to copy the path'>"+esc(label)+" ⧉</span>";}
 function cardHtml(x,note){var ny=(x.needsYou||[]).map(function(n){var what=linkHtml(n.link,n.what);return "<div class=ni><span class='k "+esc(n.type)+"'>"+(n.type==="send"?"review":"decide")+"</span><span>"+what+"</span></div>"}).join("");
