@@ -140,7 +140,11 @@ rerenderGoals();
 attachGoalHandlers();}
 
 /* ---- fleet cards ---- */
-function linkHtml(link,label){if(!link)return esc(label);if(/^https?:\/\//i.test(link))return "<a href='"+esc(link)+"' target=_blank rel=noopener>"+esc(label)+" ↗</a>";return "<span class=pathchip data-copy='"+esc(link)+"' title='Local draft — click to copy this command, then run it in your terminal'>"+esc(label)+" ⧉</span>";}
+function linkHtml(link,label){if(!link)return esc(label);var l=String(link).trim().replace(/^open\s+/i,"");
+  var m=l.match(/^(?:~\/(?:code\/)?claude-workspace\/|\.\/)?((?:agents|goals|docs)\/[^\s]+)$/i);
+  if(m)l="https://github.com/Big-Self-School/claude-workspace/blob/main/"+m[1];
+  if(/^https?:\/\//i.test(l))return "<a href='"+esc(l)+"' target=_blank rel=noopener>"+esc(label)+" ↗</a>";
+  return "<span class=pathchip data-copy='"+esc(link)+"' title='Local file — click to copy the path'>"+esc(label)+" ⧉</span>";}
 function cardHtml(x,note){var ny=(x.needsYou||[]).map(function(n){var what=linkHtml(n.link,n.what);return "<div class=ni><span class='k "+esc(n.type)+"'>"+(n.type==="send"?"review":"decide")+"</span><span>"+what+"</span></div>"}).join("");
 return "<div class=dir data-s="+esc(x.status)+"><div class=stripe></div><div class=dh><span class=dname>"+esc(x.name)+"</span><span class='pill "+esc(x.status)+"'>"+esc(x.status)+"</span></div><div class=db><div class=hl>"+esc(x.headline||"")+"</div>"+ny+"</div><div class=notewrap><label>Ask "+esc(x.name)+" to do something — COS reads &amp; acts on this</label><div class=noterow><textarea data-note="+esc(x.short)+" placeholder='e.g. draft an invoice for X · COS picks it up on the next run'>"+esc(note)+"</textarea><button class=ghost data-save="+esc(x.short)+">Save</button></div></div></div>"}
 function bindNotes(){var btns=document.querySelectorAll("[data-save]");for(var i=0;i<btns.length;i++){btns[i].onclick=function(){var dir=this.getAttribute("data-save");var ta=document.querySelector("[data-note="+dir+"]");var self=this;self.textContent="Saving…";api("note",{director:dir,body:ta.value}).then(function(){self.textContent="Saved ✓";setTimeout(function(){self.textContent="Save"},1600)}).catch(function(e){if(e&&e.code===401){self.textContent="Log in first";showLogin();}else{self.textContent="Failed — retry";setTimeout(function(){self.textContent="Save"},2000)}})}}}
